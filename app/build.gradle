@@ -1,3 +1,5 @@
+import java.util.function.Consumer
+
 plugins {
     id 'com.android.application'
 }
@@ -61,3 +63,71 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 }
+
+task cleanLib(group: 'custom'){
+    doLast{
+        delete(new File(projectDir,"output"))
+    }
+}
+
+clean.finalizedBy(cleanLib)
+
+class CopyLib {
+    File source;
+    File dstDir;
+
+    CopyLib(File source, File dstDir) {
+        this.source = source
+        this.dstDir = dstDir
+    }
+}
+
+task copyLibTask(group: 'custom') {
+    doLast{
+        String output = "output"
+        String libName = "SDL"
+        ArrayList<CopyLib> copyLibs = new ArrayList<>()
+        File outDir = new File(projectDir, "build/intermediates/cmake")
+        for (final def type in outDir.list()) {
+            File objDir = new File(outDir, "${type}/obj")
+            for (final def abi in objDir.list()) {
+                File abiDir = new File(objDir, abi)
+                for (final def lib in abiDir.list()) {
+                    if (lib.contains(libName)) {
+                        CopyLib copyLib = new CopyLib(new File(abiDir, lib),
+                                new File(projectDir, "${output}/${type}/${abi}"))
+                        copyLibs.add(copyLib)
+                    }
+                }
+            }
+        }
+        // copy shared lib
+        copyLibs.forEach(new Consumer<CopyLib>() {
+            @Override
+            void accept(CopyLib copyLib) {
+                if (!copyLib.source.exists()) {
+                    println("Warning: ${copyLib.source.absolutePath} is not exists")
+                    return
+                }
+                File dstLib = new File(copyLib.dstDir, copyLib.source.name)
+                if (!dstLib.exists() || dstLib.lastModified() < copyLib.source.lastModified()) {
+                    copy {
+                        from(copyLib.source)
+                        into(copyLib.dstDir)
+                    }
+                }
+            }
+        })
+        File dstInclude = new File(projectDir, "${output}/include")
+        if (!dstInclude.exists()) {
+            def srcInclude = new File(projectDir, "src/main/jni/SDL/include")
+            copy {
+                from(srcInclude)
+                into(dstInclude)
+                include('**/*.h')
+            }
+        }
+    }
+}
+
+build.finalizedBy(copyLibTask)

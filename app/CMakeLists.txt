@@ -6,9 +6,8 @@ project(sdl_demo)
 # include(AndroidNdkModules)
 # android_ndk_import_module_cpufeatures()
 
-
 # SDL sources are in a subfolder named "SDL"
-add_subdirectory(src/main/jni/SDL)
+add_subdirectory(src/main/jni/SDL output)
 
 # Compilation of companion libraries
 #add_subdirectory(SDL_image)
