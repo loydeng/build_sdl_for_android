@@ -6,12 +6,12 @@ android {
     ndkVersion "22.1.7171670"
 
     namespace 'com.sdl.build'
-    compileSdk 31
+    compileSdk 33
 
     defaultConfig {
         applicationId "com.sdl.build"
         minSdk 21
-        targetSdk 31
+        targetSdk 33
         versionCode 1
         versionName "1.0"
 
